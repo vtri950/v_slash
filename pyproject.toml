@@ -1,0 +1,23 @@
+[project]
+name = "v-slash"
+version = "0.1.0"
+description = "Personal Slash-style AI assistant for Slack and GitHub"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "slack-bolt>=1.21.0",
+    "PyGithub>=2.5.0",
+    "anthropic>=0.49.0",
+    "pydantic-settings>=2.7.0",
+    "httpx>=0.28.0",
+]
+
+[project.scripts]
+v-slash = "slash.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["slash"]
