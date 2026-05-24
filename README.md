@@ -247,6 +247,18 @@ In a **thread** under an `@mention`, you can reply without `@` again.
 - Prefer a dedicated PAT; rotate if leaked
 - Start with low-risk repos until you trust automated PRs
 
+## Code owners
+
+This is a single-developer project. The sole code owner is:
+
+| Path | Owner |
+|------|-------|
+| `*` | @vtri950 |
+
+All pull requests should be reviewed by @vtri950. For questions or permissions, tag `@vtri950` in this repo or on Slack.
+
+If the project expands to include more contributors, update this table to reflect the new ownership structure.
+
 ## Roadmap
 
 - [ ] GitHub App instead of PAT
