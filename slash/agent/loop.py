@@ -32,7 +32,7 @@ class Agent:
             try:
                 response = self._client.messages.create(
                     model=self._settings.agent_model,
-                    max_tokens=4096,
+                    max_tokens=8096,
                     system=SYSTEM_PROMPT,
                     tools=tools,
                     messages=messages,
