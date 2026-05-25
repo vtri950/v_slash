@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from github import Auth, Github, GithubException
 from github.PullRequest import PullRequest
@@ -13,6 +13,28 @@ class FileContent:
     content: str
     sha: str | None
     size: int
+
+
+@dataclass
+class PRReviewInfo:
+    """Summary of an open PR and its review status."""
+
+    repo: str
+    number: int
+    title: str
+    url: str
+    requested_reviewers: list[str] = field(default_factory=list)
+    completed_reviews: list[str] = field(default_factory=list)
+
+    @property
+    def pending_reviewers(self) -> list[str]:
+        """Reviewers who haven't submitted a review yet."""
+        return [r for r in self.requested_reviewers if r not in self.completed_reviews]
+
+    @property
+    def needs_review(self) -> bool:
+        """True if there are pending reviewers OR no reviewers assigned."""
+        return bool(self.pending_reviewers) or not self.requested_reviewers
 
 
 class GitHubClient:
@@ -208,3 +230,53 @@ class GitHubClient:
                 raise
         self.commit_files(repo, branch_name, files, title)
         return self.create_pull_request(repo, title, body, branch_name, base_branch)
+
+    def get_prs_needing_review(self) -> list[PRReviewInfo]:
+        """Return all open PRs across accessible repos that need reviewer attention.
+
+        A PR needs attention if:
+        - It has requested reviewers who haven't submitted a review yet, OR
+        - It has no reviewers assigned at all.
+        """
+        results: list[PRReviewInfo] = []
+        for repo_name in self.list_repos():
+            try:
+                repo = self._repo(repo_name)
+            except ValueError:
+                continue
+            try:
+                prs = repo.get_pulls(state="open")
+            except GithubException:
+                logger = __import__("logging").getLogger(__name__)
+                logger.exception("Failed to list PRs for %s", repo_name)
+                continue
+
+            for pr in prs:
+                try:
+                    # get_review_requests returns (list of users, list of teams)
+                    requested_users, _ = pr.get_review_requests()
+                    requested = [u.login for u in requested_users]
+
+                    reviews = list(pr.get_reviews())
+                    completed = list({r.user.login for r in reviews if r.user})
+
+                    info = PRReviewInfo(
+                        repo=repo_name,
+                        number=pr.number,
+                        title=pr.title,
+                        url=pr.html_url,
+                        requested_reviewers=requested,
+                        completed_reviews=completed,
+                    )
+                    if info.needs_review:
+                        results.append(info)
+                except GithubException:
+                    logger = __import__("logging").getLogger(__name__)
+                    logger.exception(
+                        "Failed to get review info for %s#%d",
+                        repo_name,
+                        pr.number,
+                    )
+                    continue
+
+        return results
