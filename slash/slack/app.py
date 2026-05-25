@@ -124,12 +124,12 @@ def create_slack_app(settings: Settings) -> SocketModeHandler:
                 client,
                 channel,
                 thread_ts,
-                "On it — reading the thread and checking GitHub…",
+                "On it \u2014 reading the thread and checking GitHub\u2026",
             )
         except SlackApiError as e:
             err = e.response.get("error", "unknown")
             logger.error(
-                "Cannot post to channel %s: %s — invite the bot: /invite @%s",
+                "Cannot post to channel %s: %s \u2014 invite the bot: /invite @%s",
                 channel,
                 err,
                 bot_name,
@@ -152,7 +152,7 @@ def create_slack_app(settings: Settings) -> SocketModeHandler:
         channel = event["channel"]
         channel_type = event.get("channel_type", "")
 
-        # Direct messages — no @mention required
+        # Direct messages \u2014 no @mention required
         if channel_type == "im":
             thread_ts = event.get("thread_ts") or event["ts"]
             _dispatch(channel, thread_ts, "direct_message")
@@ -178,6 +178,11 @@ def create_slack_app(settings: Settings) -> SocketModeHandler:
     @app.error
     def on_bolt_error(error, body, logger):  # noqa: ARG001
         logger.exception("Bolt error: %s body=%s", error, body)
+
+    # Start the daily PR review reminder scheduler
+    from slash.reminder import start_reminder
+
+    start_reminder(client, github, settings)
 
     handler = SocketModeHandler(app, settings.slack_app_token)
     return handler
