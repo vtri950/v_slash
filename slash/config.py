@@ -39,6 +39,17 @@ class Settings(BaseSettings):
     agent_max_turns: int = 12
     agent_model: str = "deepseek-v4-flash"
 
+    # PR review reminder
+    slack_review_channel: str = Field(
+        default="",
+        description="Slack channel ID or name to post daily PR review reminders",
+    )
+    review_reminder_enabled: bool = True
+    review_reminder_time: str = Field(
+        default="09:00",
+        description="Time of day for the reminder in HH:MM (24-hour format)",
+    )
+
     @field_validator(
         "slack_bot_token",
         "slack_app_token",
